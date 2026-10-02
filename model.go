@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/cloudwego/eino-ext/components/model/agenticopenai"
 	"github.com/cloudwego/eino/components/model"
@@ -17,7 +18,11 @@ const codexBaseURL = "https://chatgpt.com/backend-api/codex"
 
 // NewModel creates a codex subscription compliant responses model.
 func NewModel(ctx context.Context, conf *ResponsesConfig) (*ResponsesModel, error) {
-	am := newAuthManager()
+	am := newAuthManager(func() time.Time { return time.Now() })
+	if err := am.ensureSession(); err != nil {
+		return nil, fmt.Errorf("codex session err: %w", err)
+	}
+
 	httpClient := &http.Client{
 		Transport: &authRoundTripper{
 			base:        http.DefaultTransport,
@@ -29,6 +34,7 @@ func NewModel(ctx context.Context, conf *ResponsesConfig) (*ResponsesModel, erro
 	}
 	var store bool
 	m, err := agenticopenai.NewResponsesModel(ctx, &agenticopenai.ResponsesConfig{
+		Model:      conf.Model,
 		HTTPClient: httpClient,
 		Store:      &store,
 		BaseURL:    codexBaseURL,
@@ -92,12 +98,9 @@ func (art *authRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 		return nil, fmt.Errorf("unsafe url: %q to send codex credentials", u)
 	}
 
-	if err := art.authManager.ensureSession(); err != nil {
-		return nil, err
-	}
-	token := art.authManager.AccessToken()
-	if token == "" {
-		return nil, errors.New("empty access token")
+	token, err := art.authManager.token(req.Context())
+	if err != nil {
+		return nil, fmt.Errorf("obtain access token err: %w", err)
 	}
 
 	areq := req.Clone(req.Context())
