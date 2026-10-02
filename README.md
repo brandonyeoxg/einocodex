@@ -19,7 +19,7 @@ go get github.com/brandonyeoxg/einocodex
 
 ```go
 model, err := einocodex.NewModel(context.Background(), &einocodex.ResponsesConfig{
-    Model: "OPENAI_SUPPORT_MODEL_ID",
+    Model: "OPENAI_MODEL_ID",
 })
 if err != nil {
     ...
