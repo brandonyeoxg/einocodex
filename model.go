@@ -17,7 +17,11 @@ import (
 const codexBaseURL = "https://chatgpt.com/backend-api/codex"
 
 // NewModel creates a codex subscription compliant responses model.
-func NewModel(ctx context.Context, conf *ResponsesConfig) (*ResponsesModel, error) {
+func NewModel(ctx context.Context, conf *agenticopenai.ResponsesConfig) (*ResponsesModel, error) {
+	if conf == nil {
+		return nil, errors.New("conf cannot be nil")
+	}
+
 	am := newAuthManager(func() time.Time { return time.Now() })
 	if err := am.ensureSession(); err != nil {
 		return nil, fmt.Errorf("codex session err: %w", err)
@@ -33,22 +37,17 @@ func NewModel(ctx context.Context, conf *ResponsesConfig) (*ResponsesModel, erro
 		},
 	}
 	var store bool
-	m, err := agenticopenai.NewResponsesModel(ctx, &agenticopenai.ResponsesConfig{
-		Model:      conf.Model,
-		HTTPClient: httpClient,
-		Store:      &store,
-		BaseURL:    codexBaseURL,
-	})
+	confCopy := *conf
+	confCopy.HTTPClient = httpClient
+	confCopy.Store = &store
+	confCopy.BaseURL = codexBaseURL
+	m, err := agenticopenai.NewResponsesModel(ctx, &confCopy)
 	if err != nil {
 		return nil, err
 	}
 	return &ResponsesModel{
 		ResponsesModel: m,
 	}, nil
-}
-
-type ResponsesConfig struct {
-	Model string
 }
 
 type ResponsesModel struct {
