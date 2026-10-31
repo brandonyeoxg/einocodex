@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brandonyeoxg/einocodex"
+	"github.com/cloudwego/eino-ext/components/model/agenticopenai"
 	"github.com/cloudwego/eino/schema"
 	"github.com/openai/openai-go/v3"
 )
@@ -17,7 +18,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	m, err := einocodex.NewModel(ctx, &einocodex.ResponsesConfig{
+	m, err := einocodex.NewModel(ctx, &agenticopenai.ResponsesConfig{
 		Model: "gpt-5.6-terra",
 	})
 	if err != nil {
